@@ -3,379 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мультиплеерный Вордли</title>
+    <title>NEON WORDLE | Мультиплеер</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
         :root {
-            --primary-color: #6aaa64;
-            --secondary-color: #c9b458;
-            --dark-color: #787c7e;
-            --light-color: #d3d6da;
-            --bg-color: #ffffff;
-            --text-color: #000000;
+            --neon-blue: #0ff0fc;
+            --neon-pink: #ff00ff;
+            --neon-purple: #bc13fe;
+            --dark-bg: #0a0a20;
+            --darker-bg: #050510;
+            --cell-size: 60px;
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+        
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+        
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: var(--dark-bg);
+            color: white;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            color: var(--text-color);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(188, 19, 254, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 252, 0.15) 0%, transparent 25%);
+            overflow-x: hidden;
         }
-
+        
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             padding: 20px;
-            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
         }
-
+        
         h1 {
             text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 30px;
+            margin: 20px 0;
+            font-size: 2.5rem;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
+            letter-spacing: 3px;
         }
-
-        .game-section, .login-section, .room-section {
-            background-color: var(--bg-color);
+        
+        .panel {
+            background-color: rgba(10, 10, 32, 0.8);
+            border: 1px solid var(--neon-purple);
             border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
             margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(188, 19, 254, 0.3);
+            backdrop-filter: blur(5px);
         }
-
-        .login-section, .room-section {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        
+        .panel-title {
+            color: var(--neon-pink);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-shadow: 0 0 5px var(--neon-pink);
         }
-
+        
         input {
-            padding: 12px;
-            border: 2px solid var(--light-color);
+            width: 100%;
+            padding: 12px 15px;
+            background-color: rgba(5, 5, 16, 0.7);
+            border: 1px solid var(--neon-blue);
             border-radius: 5px;
-            font-size: 16px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 15px;
             outline: none;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
         }
-
+        
         input:focus {
-            border-color: var(--primary-color);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-pink);
         }
-
-        button {
-            background-color: var(--primary-color);
+        
+        .btn {
+            background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
             color: white;
             border: none;
-            padding: 12px;
+            padding: 12px 20px;
             border-radius: 5px;
-            font-size: 16px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 0 10px rgba(188, 19, 254, 0.5);
         }
-
-        button:hover {
-            background-color: #5d9957;
+        
+        .btn:hover {
+            box-shadow: 0 0 20px var(--neon-pink);
+            transform: translateY(-2px);
         }
-
-        button:disabled {
-            background-color: var(--light-color);
+        
+        .btn:disabled {
+            background: #333;
+            box-shadow: none;
             cursor: not-allowed;
+            transform: none;
         }
-
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 255, 252, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+        
         .game-board {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-rows: repeat(6, var(--cell-size));
+            grid-template-columns: repeat(5, var(--cell-size));
+            gap: 8px;
+            margin: 20px auto;
+            justify-content: center;
         }
-
-        .row {
-            display: flex;
-            gap: 5px;
-        }
-
+        
         .cell {
-            width: 50px;
-            height: 50px;
-            border: 2px solid var(--light-color);
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
+            font-size: 2rem;
             font-weight: bold;
             text-transform: uppercase;
             border-radius: 5px;
+            background-color: rgba(5, 5, 16, 0.5);
+            transition: all 0.3s;
         }
-
+        
         .cell.filled {
-            border-color: var(--dark-color);
+            border-color: var(--neon-blue);
+            animation: pulse 0.5s;
         }
-
+        
         .cell.correct {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+            background-color: var(--neon-blue);
+            color: var(--darker-bg);
+            border-color: var(--neon-blue);
+            text-shadow: 0 0 5px white;
+            box-shadow: 0 0 15px var(--neon-blue);
         }
-
+        
         .cell.present {
-            background-color: var(--secondary-color);
+            background-color: var(--neon-purple);
             color: white;
-            border-color: var(--secondary-color);
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 15px var(--neon-purple);
         }
-
+        
         .cell.absent {
-            background-color: var(--dark-color);
-            color: white;
-            border-color: var(--dark-color);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
         }
-
-        .keyboard {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            margin-top: 20px;
-        }
-
-        .keyboard-row {
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .key {
-            min-width: 30px;
-            height: 50px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--light-color);
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0 10px;
-        }
-
-        .key:hover {
-            background-color: #c0c3c7;
-        }
-
-        .key.correct {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .key.present {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .key.absent {
-            background-color: var(--dark-color);
-            color: white;
-        }
-
-        .stats {
+        
+        .players {
             display: flex;
             justify-content: space-between;
-            margin-top: 20px;
+            margin: 20px 0;
+            gap: 15px;
         }
-
-        .player-stat {
-            text-align: center;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #f0f0f0;
+        
+        .player {
             flex: 1;
-            margin: 0 5px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: rgba(5, 5, 16, 0.7);
+            border: 1px solid var(--neon-purple);
+            text-align: center;
+            transition: all 0.3s;
         }
-
-        .player-stat.active {
-            background-color: var(--primary-color);
-            color: white;
+        
+        .player.active {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
         }
-
+        
+        .player-name {
+            font-size: 1.1rem;
+            color: var(--neon-pink);
+            margin-bottom: 5px;
+            text-shadow: 0 0 5px var(--neon-pink);
+        }
+        
+        .player-stats {
+            font-size: 0.9rem;
+            color: var(--neon-blue);
+        }
+        
+        .message {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            min-height: 25px;
+        }
+        
+        .error {
+            color: #ff3860;
+            text-shadow: 0 0 5px #ff3860;
+        }
+        
+        .success {
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+        
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
             justify-content: center;
             align-items: center;
             z-index: 100;
+            backdrop-filter: blur(5px);
         }
-
+        
         .modal-content {
-            background-color: white;
-            padding: 20px;
+            background-color: var(--darker-bg);
+            border: 1px solid var(--neon-blue);
             border-radius: 10px;
+            padding: 25px;
             max-width: 400px;
-            width: 100%;
+            width: 90%;
             text-align: center;
+            box-shadow: 0 0 30px var(--neon-blue);
         }
-
-        .hint-poll {
-            margin-top: 20px;
+        
+        .modal-title {
+            color: var(--neon-pink);
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px var(--neon-pink);
         }
-
-        .hint-buttons {
+        
+        .modal-message {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
             display: flex;
-            justify-content: center;
             gap: 10px;
-            margin-top: 10px;
+            justify-content: center;
         }
-
-        .hint-info {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f0f8ff;
-            border-radius: 5px;
-            font-size: 14px;
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
-
-        .message {
-            text-align: center;
-            margin: 10px 0;
-            font-weight: bold;
-            min-height: 20px;
+        
+        @keyframes neonGlow {
+            0% { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
+            50% { text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue); }
+            100% { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
         }
-
-        .error {
-            color: #ff4444;
-        }
-
-        .success {
-            color: var(--primary-color);
-        }
-
-        @media (max-width: 500px) {
-            .cell {
-                width: 40px;
-                height: 40px;
-                font-size: 20px;
+        
+        @media (max-width: 600px) {
+            :root {
+                --cell-size: 50px;
             }
-
-            .key {
-                height: 40px;
-                font-size: 14px;
-                min-width: 25px;
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .panel {
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Мультиплеерный Вордли</h1>
+        <h1>NEON WORDLE</h1>
         
-        <div class="login-section" id="loginSection">
-            <h2>Вход в игру</h2>
-            <input type="text" id="nicknameInput" placeholder="Введите ваш никнейм" maxlength="10">
-            <button id="loginButton">Продолжить</button>
+        <!-- Логин -->
+        <div class="panel" id="loginPanel">
+            <h2 class="panel-title">ВХОД</h2>
+            <input type="text" id="nicknameInput" placeholder="Твой никнейм" maxlength="10">
+            <button class="btn" id="loginBtn">ПОГНАЛИ</button>
         </div>
-
-        <div class="room-section" id="roomSection" style="display: none;">
-            <h2>Комната</h2>
-            <div id="roomInfo"></div>
+        
+        <!-- Лобби -->
+        <div class="panel" id="lobbyPanel" style="display: none;">
+            <h2 class="panel-title">КОМНАТА: <span id="roomCode"></span></h2>
             <div id="playersList"></div>
-            <button id="startGameButton" disabled>Начать игру</button>
-            <button id="leaveRoomButton">Покинуть комнату</button>
+            <button class="btn" id="startGameBtn" disabled>СТАРТ</button>
+            <button class="btn btn-secondary" id="leaveRoomBtn">ВЫЙТИ</button>
         </div>
-
-        <div class="game-section" id="gameSection" style="display: none;">
-            <div class="stats">
-                <div class="player-stat" id="player1Stat">
+        
+        <!-- Игра -->
+        <div id="gamePanel" style="display: none;">
+            <div class="players">
+                <div class="player" id="player1">
                     <div class="player-name">Игрок 1</div>
-                    <div class="player-score">Слов: 0</div>
-                    <div class="player-letters">Букв: 0</div>
+                    <div class="player-stats">Слов: 0 | Букв: 0</div>
                 </div>
-                <div class="player-stat" id="player2Stat">
+                <div class="player" id="player2">
                     <div class="player-name">Игрок 2</div>
-                    <div class="player-score">Слов: 0</div>
-                    <div class="player-letters">Букв: 0</div>
+                    <div class="player-stats">Слов: 0 | Букв: 0</div>
                 </div>
             </div>
-
+            
             <div class="message" id="gameMessage"></div>
-
+            
             <div class="game-board" id="gameBoard"></div>
-
-            <div class="keyboard">
-                <div class="keyboard-row">
-                    <div class="key" data-key="й">й</div>
-                    <div class="key" data-key="ц">ц</div>
-                    <div class="key" data-key="у">у</div>
-                    <div class="key" data-key="к">к</div>
-                    <div class="key" data-key="е">е</div>
-                    <div class="key" data-key="н">н</div>
-                    <div class="key" data-key="г">г</div>
-                    <div class="key" data-key="ш">ш</div>
-                    <div class="key" data-key="щ">щ</div>
-                    <div class="key" data-key="з">з</div>
-                    <div class="key" data-key="х">х</div>
-                    <div class="key" data-key="ъ">ъ</div>
-                </div>
-                <div class="keyboard-row">
-                    <div class="key" data-key="ф">ф</div>
-                    <div class="key" data-key="ы">ы</div>
-                    <div class="key" data-key="в">в</div>
-                    <div class="key" data-key="а">а</div>
-                    <div class="key" data-key="п">п</div>
-                    <div class="key" data-key="р">р</div>
-                    <div class="key" data-key="о">о</div>
-                    <div class="key" data-key="л">л</div>
-                    <div class="key" data-key="д">д</div>
-                    <div class="key" data-key="ж">ж</div>
-                    <div class="key" data-key="э">э</div>
-                </div>
-                <div class="keyboard-row">
-                    <div class="key" data-key="я">я</div>
-                    <div class="key" data-key="ч">ч</div>
-                    <div class="key" data-key="с">с</div>
-                    <div class="key" data-key="м">м</div>
-                    <div class="key" data-key="и">и</div>
-                    <div class="key" data-key="т">т</div>
-                    <div class="key" data-key="ь">ь</div>
-                    <div class="key" data-key="б">б</div>
-                    <div class="key" data-key="ю">ю</div>
-                </div>
+            
+            <div class="message">
+                Раунд: <span id="roundCounter">1</span>
+                | Ход: <span id="currentPlayer"></span>
             </div>
         </div>
     </div>
-
-    <div class="modal" id="hintModal">
+    
+    <!-- Модалка подсказки -->
+    <div class="modal" id="hintModal" style="display: none;">
         <div class="modal-content">
-            <h3>Запросить подсказку?</h3>
-            <p>Вы угадали 4 буквы на своих местах. Хотите получить подсказку?</p>
-            <div class="hint-poll" id="hintPoll">
-                <p>Ожидание ответа второго игрока...</p>
-            </div>
-            <div class="hint-buttons">
-                <button id="acceptHintButton">Да</button>
-                <button id="declineHintButton">Нет</button>
+            <h3 class="modal-title">ПОДСКАЗКА?</h3>
+            <p class="modal-message">Вы угадали 4 буквы! Хотите получить подсказку?</p>
+            <div id="hintPoll">Ожидаем ответа соперника...</div>
+            <div class="modal-buttons">
+                <button class="btn" id="acceptHintBtn">ДА</button>
+                <button class="btn btn-secondary" id="declineHintBtn">НЕТ</button>
             </div>
         </div>
     </div>
-
-    <div class="modal" id="resultModal">
+    
+    <!-- Модалка результата -->
+    <div class="modal" id="resultModal" style="display: none;">
         <div class="modal-content">
-            <h3 id="resultTitle">Результат раунда</h3>
-            <p id="resultMessage"></p>
-            <button id="nextRoundButton">Следующий раунд</button>
+            <h3 class="modal-title" id="resultTitle">РЕЗУЛЬТАТ</h3>
+            <p class="modal-message" id="resultMessage"></p>
+            <button class="btn" id="nextRoundBtn">СЛЕДУЮЩИЙ РАУНД</button>
         </div>
     </div>
 
     <script>
-        // Firebase configuration
+        // Firebase конфиг
         const firebaseConfig = {
             apiKey: "AIzaSyC_NY3eXimeD74iU6g8qZE0wsl7yexWThw",
             authDomain: "ripsweep-1aaaf.firebaseapp.com",
@@ -386,98 +379,88 @@
             appId: "1:600546881732:web:e3e8f2c2980c583e3e5991",
             measurementId: "G-HS9JT49X7R"
         };
-
-        // Initialize Firebase
+        
+        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
-        // Game constants
+        
+        // Константы игры
         const WORD_LENGTH = 5;
         const MAX_ATTEMPTS = 6;
         const RUWORDS = [
-            "абаза", "абазе", "абазу", "абазы", "абака", "абаке", "абаки", "абаку", "аббат",
-            // ... остальные слова из вашего списка
-            "ифрит", "княжа", "княжу", "княжь", "лесою"
+            "абаза", "абака", "аббат", "абвер", "абзац", "аборт", "абрек", "абрис", "абхаз", 
+            "аванс", "авгит", "авгур", "авеню", "авизо", "авлос", "авось", "аврал", 
+            // ... остальные слова
+            "ящик", "ящур", "ящур", "ящур"
         ];
-
-        // Game state
+        
+        // Состояние игры
         let gameState = {
             nickname: "",
+            playerId: "",
             roomId: "",
             players: [],
             currentPlayerIndex: 0,
-            round: 0,
+            round: 1,
             targetWord: "",
             attempts: [],
             currentAttempt: "",
             gameStarted: false,
             hintRequested: false,
-            hintAccepted: false,
-            hintDeclined: false,
+            hintResponses: {},
             stats: {}
         };
-
-        // DOM elements
-        const loginSection = document.getElementById('loginSection');
-        const roomSection = document.getElementById('roomSection');
-        const gameSection = document.getElementById('gameSection');
+        
+        // DOM элементы
+        const loginPanel = document.getElementById('loginPanel');
+        const lobbyPanel = document.getElementById('lobbyPanel');
+        const gamePanel = document.getElementById('gamePanel');
         const nicknameInput = document.getElementById('nicknameInput');
-        const loginButton = document.getElementById('loginButton');
-        const roomInfo = document.getElementById('roomInfo');
+        const loginBtn = document.getElementById('loginBtn');
+        const roomCode = document.getElementById('roomCode');
         const playersList = document.getElementById('playersList');
-        const startGameButton = document.getElementById('startGameButton');
-        const leaveRoomButton = document.getElementById('leaveRoomButton');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const leaveRoomBtn = document.getElementById('leaveRoomBtn');
         const gameBoard = document.getElementById('gameBoard');
         const gameMessage = document.getElementById('gameMessage');
-        const player1Stat = document.getElementById('player1Stat');
-        const player2Stat = document.getElementById('player2Stat');
+        const player1 = document.getElementById('player1');
+        const player2 = document.getElementById('player2');
+        const roundCounter = document.getElementById('roundCounter');
+        const currentPlayer = document.getElementById('currentPlayer');
         const hintModal = document.getElementById('hintModal');
         const hintPoll = document.getElementById('hintPoll');
-        const acceptHintButton = document.getElementById('acceptHintButton');
-        const declineHintButton = document.getElementById('declineHintButton');
+        const acceptHintBtn = document.getElementById('acceptHintBtn');
+        const declineHintBtn = document.getElementById('declineHintBtn');
         const resultModal = document.getElementById('resultModal');
         const resultTitle = document.getElementById('resultTitle');
         const resultMessage = document.getElementById('resultMessage');
-        const nextRoundButton = document.getElementById('nextRoundButton');
-
-        // Keyboard keys
-        const keys = document.querySelectorAll('.key');
-
-        // Initialize game board
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        
+        // Инициализация игрового поля
         function initGameBoard() {
             gameBoard.innerHTML = '';
             for (let i = 0; i < MAX_ATTEMPTS; i++) {
-                const row = document.createElement('div');
-                row.className = 'row';
                 for (let j = 0; j < WORD_LENGTH; j++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
-                    row.appendChild(cell);
+                    cell.id = `cell-${i}-${j}`;
+                    gameBoard.appendChild(cell);
                 }
-                gameBoard.appendChild(row);
             }
         }
-
-        // Update game board
+        
+        // Обновление игрового поля
         function updateGameBoard() {
-            const rows = gameBoard.querySelectorAll('.row');
-            
-            // Clear all cells
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('.cell');
-                cells.forEach(cell => {
-                    cell.textContent = '';
-                    cell.className = 'cell';
-                });
+            // Очищаем все клетки
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell';
             });
             
-            // Fill with attempts
+            // Заполняем попытки
             gameState.attempts.forEach((attempt, attemptIndex) => {
-                const row = rows[attemptIndex];
-                const cells = row.querySelectorAll('.cell');
-                
                 for (let i = 0; i < WORD_LENGTH; i++) {
-                    const cell = cells[i];
+                    const cell = document.getElementById(`cell-${attemptIndex}-${i}`);
                     if (attempt.word[i]) {
                         cell.textContent = attempt.word[i];
                         cell.classList.add('filled');
@@ -495,117 +478,103 @@
                 }
             });
             
-            // Fill current attempt
+            // Текущая попытка
             if (gameState.currentAttempt) {
-                const currentRowIndex = gameState.attempts.length;
-                if (currentRowIndex < MAX_ATTEMPTS) {
-                    const row = rows[currentRowIndex];
-                    const cells = row.querySelectorAll('.cell');
-                    
+                const currentRow = gameState.attempts.length;
+                if (currentRow < MAX_ATTEMPTS) {
                     for (let i = 0; i < gameState.currentAttempt.length; i++) {
-                        cells[i].textContent = gameState.currentAttempt[i];
-                        cells[i].classList.add('filled');
+                        const cell = document.getElementById(`cell-${currentRow}-${i}`);
+                        cell.textContent = gameState.currentAttempt[i];
+                        cell.classList.add('filled');
                     }
                 }
             }
         }
-
-        // Update keyboard
-        function updateKeyboard() {
-            const usedLetters = {};
+        
+        // Обновление информации о игроках
+        function updatePlayersInfo() {
+            // Лобби
+            playersList.innerHTML = gameState.players.map(player => 
+                `<div style="margin: 5px 0; color: ${player.id === gameState.playerId ? 'var(--neon-blue)' : 'white'}">
+                    ${player.nickname} ${player.id === gameState.players[0]?.id ? '👑' : ''}
+                </div>`
+            ).join('');
             
-            gameState.attempts.forEach(attempt => {
-                attempt.word.split('').forEach((letter, index) => {
-                    if (attempt.feedback) {
-                        if (attempt.feedback[index] === 'correct') {
-                            usedLetters[letter] = 'correct';
-                        } else if (attempt.feedback[index] === 'present' && usedLetters[letter] !== 'correct') {
-                            usedLetters[letter] = 'present';
-                        } else if (!usedLetters[letter]) {
-                            usedLetters[letter] = 'absent';
-                        }
-                    }
-                });
-            });
-            
-            keys.forEach(key => {
-                const letter = key.getAttribute('data-key');
-                if (usedLetters[letter]) {
-                    key.classList.add(usedLetters[letter]);
-                } else {
-                    key.classList.remove('correct', 'present', 'absent');
-                }
-            });
-        }
-
-        // Update player stats
-        function updateStats() {
+            // Игра
             if (gameState.players.length > 0) {
-                player1Stat.querySelector('.player-name').textContent = gameState.players[0].nickname;
-                player1Stat.querySelector('.player-score').textContent = `Слов: ${gameState.stats[gameState.players[0].id]?.words || 0}`;
-                player1Stat.querySelector('.player-letters').textContent = `Букв: ${gameState.stats[gameState.players[0].id]?.letters || 0}`;
+                player1.querySelector('.player-name').textContent = gameState.players[0].nickname;
+                player1.querySelector('.player-stats').textContent = 
+                    `Слов: ${gameState.stats[gameState.players[0].id]?.words || 0} | Букв: ${gameState.stats[gameState.players[0].id]?.letters || 0}`;
                 
-                player1Stat.classList.toggle('active', gameState.gameStarted && gameState.currentPlayerIndex === 0);
+                player1.classList.toggle('active', 
+                    gameState.gameStarted && gameState.currentPlayerIndex === 0 && gameState.players[0].id === gameState.playerId);
             }
             
             if (gameState.players.length > 1) {
-                player2Stat.querySelector('.player-name').textContent = gameState.players[1].nickname;
-                player2Stat.querySelector('.player-score').textContent = `Слов: ${gameState.stats[gameState.players[1].id]?.words || 0}`;
-                player2Stat.querySelector('.player-letters').textContent = `Букв: ${gameState.stats[gameState.players[1].id]?.letters || 0}`;
+                player2.querySelector('.player-name').textContent = gameState.players[1].nickname;
+                player2.querySelector('.player-stats').textContent = 
+                    `Слов: ${gameState.stats[gameState.players[1].id]?.words || 0} | Букв: ${gameState.stats[gameState.players[1].id]?.letters || 0}`;
                 
-                player2Stat.classList.toggle('active', gameState.gameStarted && gameState.currentPlayerIndex === 1);
+                player2.classList.toggle('active', 
+                    gameState.gameStarted && gameState.currentPlayerIndex === 1 && gameState.players[1].id === gameState.playerId);
+            }
+            
+            // Кнопка старта
+            if (gameState.players.length > 0 && gameState.players[0].id === gameState.playerId) {
+                startGameBtn.disabled = gameState.players.length < 2;
+            }
+            
+            // Текущий игрок
+            if (gameState.gameStarted) {
+                currentPlayer.textContent = gameState.players[gameState.currentPlayerIndex].nickname;
+                roundCounter.textContent = gameState.round;
             }
         }
-
-        // Show message
-        function showMessage(message, isError = false) {
-            gameMessage.textContent = message;
-            gameMessage.className = 'message';
-            if (isError) {
-                gameMessage.classList.add('error');
-            } else {
-                gameMessage.classList.add('success');
-            }
+        
+        // Показать сообщение
+        function showMessage(msg, isError = false) {
+            gameMessage.textContent = msg;
+            gameMessage.className = 'message ' + (isError ? 'error' : 'success');
         }
-
-        // Clear message
+        
+        // Скрыть сообщение
         function clearMessage() {
             gameMessage.textContent = '';
             gameMessage.className = 'message';
         }
-
-        // Generate random word
+        
+        // Генерация случайного слова
         function getRandomWord() {
             const fiveLetterWords = RUWORDS.filter(word => word.length === WORD_LENGTH);
             return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
         }
-
-        // Check if word is valid
+        
+        // Проверка слова
         function isValidWord(word) {
             return RUWORDS.includes(word.toLowerCase());
         }
-
-        // Evaluate attempt
+        
+        // Оценка попытки
         function evaluateAttempt(attempt, target) {
             const feedback = [];
             const targetLetters = target.split('');
             const attemptLetters = attempt.split('');
             
-            // First pass for correct letters
+            // Правильные буквы
             for (let i = 0; i < WORD_LENGTH; i++) {
                 if (attemptLetters[i] === targetLetters[i]) {
                     feedback[i] = 'correct';
-                    targetLetters[i] = null; // Mark as used
+                    targetLetters[i] = null;
                 }
             }
             
-            // Second pass for present letters
+            // Буквы есть в слове
             for (let i = 0; i < WORD_LENGTH; i++) {
                 if (!feedback[i]) {
                     const index = targetLetters.indexOf(attemptLetters[i]);
                     if (index !== -1) {
                         feedback[i] = 'present';
-                        targetLetters[index] = null; // Mark as used
+                        targetLetters[index] = null;
                     } else {
                         feedback[i] = 'absent';
                     }
@@ -614,104 +583,27 @@
             
             return feedback;
         }
-
-        // Count correct letters
+        
+        // Подсчет правильных букв
         function countCorrectLetters(feedback) {
             return feedback.filter(f => f === 'correct').length;
         }
-
-        // Get possible letters for hint
-        function getPossibleLetters() {
-            const possibleLetters = {};
-            const correctLetters = Array(WORD_LENGTH).fill(null);
-            const presentLetters = new Set();
-            const absentLetters = new Set();
-            
-            // Analyze attempts to determine correct, present and absent letters
-            gameState.attempts.forEach(attempt => {
-                attempt.word.split('').forEach((letter, index) => {
-                    if (attempt.feedback[index] === 'correct') {
-                        correctLetters[index] = letter;
-                    } else if (attempt.feedback[index] === 'present') {
-                        presentLetters.add(letter);
-                    } else if (attempt.feedback[index] === 'absent') {
-                        absentLetters.add(letter);
-                    }
-                });
-            });
-            
-            // For each position, collect possible letters
-            for (let i = 0; i < WORD_LENGTH; i++) {
-                if (correctLetters[i]) {
-                    possibleLetters[i] = [correctLetters[i]];
-                } else {
-                    const letters = new Set();
-                    
-                    // Find all words that match current knowledge
-                    const matchingWords = RUWORDS.filter(word => {
-                        if (word.length !== WORD_LENGTH) return false;
-                        
-                        // Check correct letters
-                        for (let j = 0; j < WORD_LENGTH; j++) {
-                            if (correctLetters[j] && word[j] !== correctLetters[j]) {
-                                return false;
-                            }
-                        }
-                        
-                        // Check present letters (must be in word but not in these positions)
-                        for (const letter of presentLetters) {
-                            if (!word.includes(letter)) {
-                                return false;
-                            }
-                            
-                            // If we know the letter is not in certain positions
-                            for (let j = 0; j < WORD_LENGTH; j++) {
-                                if (gameState.attempts.some(attempt => 
-                                    attempt.word[j] === letter && attempt.feedback[j] === 'absent')) {
-                                    if (word[j] === letter) return false;
-                                }
-                            }
-                        }
-                        
-                        // Check absent letters (must not be in word at all)
-                        for (const letter of absentLetters) {
-                            // Only if the letter is not also present
-                            if (!presentLetters.has(letter) && word.includes(letter)) {
-                                return false;
-                            }
-                        }
-                        
-                        return true;
-                    });
-                    
-                    // Collect possible letters for this position
-                    matchingWords.forEach(word => {
-                        letters.add(word[i]);
-                    });
-                    
-                    possibleLetters[i] = Array.from(letters);
-                }
-            }
-            
-            return possibleLetters;
-        }
-
-        // Join room
+        
+        // Подключение к комнате
         function joinRoom() {
-            // Generate room ID or get from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            let roomId = urlParams.get('room');
+            // Создаем или присоединяемся к комнате
+            gameState.roomId = generateRoomCode();
+            roomCode.textContent = gameState.roomId;
             
-            if (!roomId) {
-                roomId = Math.random().toString(36).substring(2, 8);
-                window.history.pushState({}, '', `?room=${roomId}`);
-            }
+            // Создаем игрока
+            gameState.playerId = generateId();
+            const player = {
+                id: gameState.playerId,
+                nickname: gameState.nickname
+            };
             
-            gameState.roomId = roomId;
-            roomInfo.textContent = `Комната: ${roomId}`;
-            
-            // Connect to Firebase room
-            const roomRef = database.ref(`rooms/${roomId}`);
+            // Подключаемся к Firebase
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
             
             roomRef.on('value', (snapshot) => {
                 const roomData = snapshot.val();
@@ -720,79 +612,67 @@
                     gameState.players = roomData.players || [];
                     gameState.gameStarted = roomData.gameStarted || false;
                     gameState.currentPlayerIndex = roomData.currentPlayerIndex || 0;
-                    gameState.round = roomData.round || 0;
+                    gameState.round = roomData.round || 1;
                     gameState.targetWord = roomData.targetWord || '';
                     gameState.attempts = roomData.attempts || [];
                     gameState.currentAttempt = roomData.currentAttempt || '';
                     gameState.stats = roomData.stats || {};
                     gameState.hintRequested = roomData.hintRequested || false;
-                    gameState.hintAccepted = roomData.hintAccepted || false;
-                    gameState.hintDeclined = roomData.hintDeclined || false;
+                    gameState.hintResponses = roomData.hintResponses || {};
                     
-                    // Update UI
-                    updatePlayersList();
-                    updateStats();
+                    // Обновляем UI
+                    updatePlayersInfo();
                     
                     if (gameState.gameStarted) {
-                        loginSection.style.display = 'none';
-                        roomSection.style.display = 'none';
-                        gameSection.style.display = 'block';
+                        loginPanel.style.display = 'none';
+                        lobbyPanel.style.display = 'none';
+                        gamePanel.style.display = 'block';
                         
-                        initGameBoard();
                         updateGameBoard();
-                        updateKeyboard();
                         
-                        if (gameState.hintRequested) {
+                        // Проверяем подсказку
+                        if (gameState.hintRequested && !gameState.hintResponses[gameState.playerId]) {
                             showHintModal();
                         }
                     } else {
-                        loginSection.style.display = 'none';
-                        roomSection.style.display = 'block';
-                        gameSection.style.display = 'none';
-                        
-                        // Enable start button if there are at least 2 players and I'm the first player
-                        const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
-                        startGameButton.disabled = gameState.players.length < 2 || gameState.players[0].id !== myPlayer?.id;
+                        loginPanel.style.display = 'none';
+                        lobbyPanel.style.display = 'block';
+                        gamePanel.style.display = 'none';
                     }
                 } else {
-                    // Create new room
-                    const myPlayer = {
-                        id: Math.random().toString(36).substring(2, 10),
-                        nickname: gameState.nickname
-                    };
-                    
+                    // Создаем новую комнату
                     roomRef.set({
-                        players: [myPlayer],
+                        players: [player],
                         gameStarted: false,
                         stats: {
-                            [myPlayer.id]: { words: 0, letters: 0 }
+                            [player.id]: { words: 0, letters: 0 }
                         }
                     });
                 }
             });
             
-            // Handle disconnections
-            roomRef.onDisconnect().remove();
+            // Обработка отключения
+            roomRef.onDisconnect().update({
+                players: gameState.players.filter(p => p.id !== gameState.playerId)
+            });
         }
-
-        // Update players list
-        function updatePlayersList() {
-            playersList.innerHTML = '<h3>Игроки:</h3>';
-            
-            if (gameState.players.length === 0) {
-                playersList.innerHTML += '<p>Нет игроков в комнате</p>';
-            } else {
-                const list = document.createElement('ul');
-                gameState.players.forEach(player => {
-                    const item = document.createElement('li');
-                    item.textContent = player.nickname;
-                    list.appendChild(item);
-                });
-                playersList.appendChild(list);
+        
+        // Генерация кода комнаты
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 4; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
+            return result;
         }
-
-        // Start game
+        
+        // Генерация ID игрока
+        function generateId() {
+            return Math.random().toString(36).substr(2, 8);
+        }
+        
+        // Начало игры
         function startGame() {
             const roomRef = database.ref(`rooms/${gameState.roomId}`);
             
@@ -804,15 +684,14 @@
                 attempts: [],
                 currentAttempt: '',
                 hintRequested: false,
-                hintAccepted: false,
-                hintDeclined: false
+                hintResponses: {}
             });
         }
-
-        // Submit attempt
+        
+        // Отправка попытки
         function submitAttempt() {
             if (!isValidWord(gameState.currentAttempt)) {
-                showMessage('Такого слова нет в словаре!', true);
+                showMessage('Нет такого слова!', true);
                 return;
             }
             
@@ -822,7 +701,7 @@
             const newAttempts = [...gameState.attempts, {
                 word: gameState.currentAttempt,
                 feedback: feedback,
-                playerId: gameState.players[gameState.currentPlayerIndex].id
+                playerId: gameState.playerId
             }];
             
             const roomRef = database.ref(`rooms/${gameState.roomId}`);
@@ -831,139 +710,87 @@
                 currentAttempt: ''
             };
             
-            // Check if word is guessed
+            // Проверка победы
             if (correctLetters === WORD_LENGTH) {
-                // Word guessed - update stats and go to next round
-                const playerId = gameState.players[gameState.currentPlayerIndex].id;
+                // Обновляем статистику
                 const newStats = {...gameState.stats};
-                
-                if (!newStats[playerId]) {
-                    newStats[playerId] = { words: 0, letters: 0 };
+                if (!newStats[gameState.playerId]) {
+                    newStats[gameState.playerId] = { words: 0, letters: 0 };
                 }
                 
-                newStats[playerId].words += 1;
-                newStats[playerId].letters += correctLetters;
+                newStats[gameState.playerId].words += 1;
+                newStats[gameState.playerId].letters += correctLetters;
                 
                 updates.stats = newStats;
-                updates.round = gameState.round + 1;
                 updates.gameStarted = false;
                 
                 roomRef.update(updates).then(() => {
                     showResult(true, gameState.currentAttempt);
                 });
-            } else if (newAttempts.length === MAX_ATTEMPTS) {
-                // All attempts used - go to next round
-                updates.round = gameState.round + 1;
+            } 
+            // Проверка конца раунда
+            else if (newAttempts.length === MAX_ATTEMPTS) {
                 updates.gameStarted = false;
-                
                 roomRef.update(updates).then(() => {
                     showResult(false, gameState.targetWord);
                 });
-            } else {
-                // Check for hint condition (4 correct letters in last attempt)
-                if (correctLetters === 4 && newAttempts.length >= 3) {
-                    updates.hintRequested = true;
-                }
-                
-                // Switch to next player
+            } 
+            // Проверка подсказки (4 правильные буквы)
+            else if (correctLetters === 4 && newAttempts.length >= 3) {
+                updates.hintRequested = true;
                 updates.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-                
+                roomRef.update(updates);
+            } 
+            // Обычный ход
+            else {
+                updates.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
                 roomRef.update(updates);
             }
         }
-
-        // Show hint modal
+        
+        // Показать модалку подсказки
         function showHintModal() {
+            hintPoll.innerHTML = 'Вы угадали 4 буквы! Хотите получить подсказку?';
+            acceptHintBtn.disabled = false;
+            declineHintBtn.disabled = false;
             hintModal.style.display = 'flex';
-            
-            // Check if both players responded
-            if (gameState.hintAccepted && gameState.hintDeclined) {
-                hintPoll.innerHTML = '<p>Игроки не согласились по поводу подсказки</p>';
-                acceptHintButton.disabled = true;
-                declineHintButton.disabled = true;
-                
-                // Hide modal after delay
-                setTimeout(() => {
-                    hintModal.style.display = 'none';
-                    
-                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
-                    roomRef.update({
-                        hintRequested: false,
-                        hintAccepted: false,
-                        hintDeclined: false
-                    });
-                }, 2000);
-            } else if (gameState.hintAccepted) {
-                // Both players accepted - show hint
-                const possibleLetters = getPossibleLetters();
-                let hintHtml = '<div class="hint-info"><p>Возможные буквы:</p><ul>';
-                
-                for (let i = 0; i < WORD_LENGTH; i++) {
-                    if (possibleLetters[i].length > 1) {
-                        hintHtml += `<li>Позиция ${i + 1}: ${possibleLetters[i].join(', ')}</li>`;
-                    }
-                }
-                
-                hintHtml += '</ul></div>';
-                hintPoll.innerHTML = hintHtml;
-                
-                acceptHintButton.disabled = true;
-                declineHintButton.disabled = true;
-                
-                // Hide modal after delay
-                setTimeout(() => {
-                    hintModal.style.display = 'none';
-                    
-                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
-                    roomRef.update({
-                        hintRequested: false,
-                        hintAccepted: false,
-                        hintDeclined: false
-                    });
-                }, 5000);
-            } else {
-                // Waiting for responses
-                hintPoll.innerHTML = '<p>Ожидание ответа второго игрока...</p>';
-                acceptHintButton.disabled = false;
-                declineHintButton.disabled = false;
-            }
         }
-
-        // Show result modal
+        
+        // Показать результат раунда
         function showResult(success, word) {
-            resultTitle.textContent = success ? 'Поздравляем!' : 'Попытки закончились';
+            resultTitle.textContent = success ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ';
             resultMessage.textContent = success 
-                ? `Игрок ${gameState.players[gameState.currentPlayerIndex].nickname} угадал слово "${word}"!` 
-                : `Никто не угадал слово "${word}".`;
+                ? `${gameState.players[gameState.currentPlayerIndex].nickname} угадал слово "${word.toUpperCase()}"!` 
+                : `Никто не угадал слово "${word.toUpperCase()}".`;
             
             resultModal.style.display = 'flex';
         }
-
-        // Start next round
-        function startNextRound() {
+        
+        // Начать следующий раунд
+        function nextRound() {
             resultModal.style.display = 'none';
             
             const roomRef = database.ref(`rooms/${gameState.roomId}`);
             
-            // Rotate players for next round
+            // Меняем игроков местами
             const rotatedPlayers = [...gameState.players];
             rotatedPlayers.push(rotatedPlayers.shift());
             
             roomRef.update({
                 players: rotatedPlayers,
                 gameStarted: true,
+                round: gameState.round + 1,
                 targetWord: getRandomWord(),
                 currentPlayerIndex: 0,
                 attempts: [],
                 currentAttempt: '',
                 hintRequested: false,
-                hintAccepted: false,
-                hintDeclined: false
+                hintResponses: {}
             });
         }
-
-        // Event listeners
-        loginButton.addEventListener('click', () => {
+        
+        // Обработчики событий
+        loginBtn.addEventListener('click', () => {
             const nickname = nicknameInput.value.trim();
             if (nickname.length < 2 || nickname.length > 10) {
                 alert('Никнейм должен быть от 2 до 10 символов');
@@ -973,47 +800,48 @@
             gameState.nickname = nickname;
             joinRoom();
         });
-
-        startGameButton.addEventListener('click', startGame);
-
-        leaveRoomButton.addEventListener('click', () => {
+        
+        startGameBtn.addEventListener('click', startGame);
+        
+        leaveRoomBtn.addEventListener('click', () => {
             window.location.reload();
         });
-
-        acceptHintButton.addEventListener('click', () => {
+        
+        acceptHintBtn.addEventListener('click', () => {
             const roomRef = database.ref(`rooms/${gameState.roomId}`);
-            const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+            const newResponses = {...gameState.hintResponses, [gameState.playerId]: true};
             
-            if (myPlayer) {
-                if (gameState.players[0].id === myPlayer.id) {
-                    roomRef.update({ hintAccepted: true });
-                } else {
-                    roomRef.update({ hintDeclined: true });
-                }
-            }
+            roomRef.update({
+                hintResponses: newResponses
+            });
+            
+            hintPoll.innerHTML = 'Вы согласились. Ожидаем ответа соперника...';
+            acceptHintBtn.disabled = true;
+            declineHintBtn.disabled = true;
         });
-
-        declineHintButton.addEventListener('click', () => {
+        
+        declineHintBtn.addEventListener('click', () => {
             const roomRef = database.ref(`rooms/${gameState.roomId}`);
-            const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+            const newResponses = {...gameState.hintResponses, [gameState.playerId]: false};
             
-            if (myPlayer) {
-                if (gameState.players[0].id === myPlayer.id) {
-                    roomRef.update({ hintDeclined: true });
-                } else {
-                    roomRef.update({ hintAccepted: true });
-                }
-            }
+            roomRef.update({
+                hintResponses: newResponses
+            });
+            
+            hintPoll.innerHTML = 'Вы отказались. Ожидаем ответа соперника...';
+            acceptHintBtn.disabled = true;
+            declineHintBtn.disabled = true;
         });
-
-        nextRoundButton.addEventListener('click', startNextRound);
-
-        // Keyboard input
+        
+        nextRoundBtn.addEventListener('click', nextRound);
+        
+        // Обработка клавиатуры
         document.addEventListener('keydown', (e) => {
             if (!gameState.gameStarted) return;
             
-            const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
-            if (!myPlayer || gameState.players[gameState.currentPlayerIndex].id !== myPlayer.id) return;
+            // Проверяем, что ход текущего игрока
+            const currentPlayerId = gameState.players[gameState.currentPlayerIndex]?.id;
+            if (currentPlayerId !== gameState.playerId) return;
             
             if (e.key === 'Enter') {
                 if (gameState.currentAttempt.length === WORD_LENGTH) {
@@ -1031,36 +859,8 @@
                 roomRef.update({ currentAttempt: gameState.currentAttempt });
             }
         });
-
-        // Virtual keyboard
-        keys.forEach(key => {
-            key.addEventListener('click', () => {
-                if (!gameState.gameStarted) return;
-                
-                const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
-                if (!myPlayer || gameState.players[gameState.currentPlayerIndex].id !== myPlayer.id) return;
-                
-                const letter = key.getAttribute('data-key');
-                
-                if (letter === 'enter') {
-                    if (gameState.currentAttempt.length === WORD_LENGTH) {
-                        submitAttempt();
-                    }
-                } else if (letter === 'backspace') {
-                    gameState.currentAttempt = gameState.currentAttempt.slice(0, -1);
-                    
-                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
-                    roomRef.update({ currentAttempt: gameState.currentAttempt });
-                } else if (gameState.currentAttempt.length < WORD_LENGTH) {
-                    gameState.currentAttempt += letter;
-                    
-                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
-                    roomRef.update({ currentAttempt: gameState.currentAttempt });
-                }
-            });
-        });
-
-        // Initialize
+        
+        // Инициализация
         initGameBoard();
     </script>
 </body>
