@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мультиплеерный Вордли</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --primary-color: #6aaa64;
+            --secondary-color: #c9b458;
+            --dark-color: #787c7e;
+            --light-color: #d3d6da;
+            --bg-color: #ffffff;
+            --text-color: #000000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        .game-section, .login-section, .room-section {
+            background-color: var(--bg-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .login-section, .room-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid var(--light-color);
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #5d9957;
+        }
+
+        button:disabled {
+            background-color: var(--light-color);
+            cursor: not-allowed;
+        }
+
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: flex;
+            gap: 5px;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--light-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 5px;
+        }
+
+        .cell.filled {
+            border-color: var(--dark-color);
+        }
+
+        .cell.correct {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .cell.present {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+
+        .cell.absent {
+            background-color: var(--dark-color);
+            color: white;
+            border-color: var(--dark-color);
+        }
+
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .key {
+            min-width: 30px;
+            height: 50px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--light-color);
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .key:hover {
+            background-color: #c0c3c7;
+        }
+
+        .key.correct {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .key.present {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .key.absent {
+            background-color: var(--dark-color);
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .player-stat {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            flex: 1;
+            margin: 0 5px;
+        }
+
+        .player-stat.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .hint-poll {
+            margin-top: 20px;
+        }
+
+        .hint-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .hint-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .message {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+            min-height: 20px;
+        }
+
+        .error {
+            color: #ff4444;
+        }
+
+        .success {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 500px) {
+            .cell {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            .key {
+                height: 40px;
+                font-size: 14px;
+                min-width: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Мультиплеерный Вордли</h1>
+        
+        <div class="login-section" id="loginSection">
+            <h2>Вход в игру</h2>
+            <input type="text" id="nicknameInput" placeholder="Введите ваш никнейм" maxlength="10">
+            <button id="loginButton">Продолжить</button>
+        </div>
+
+        <div class="room-section" id="roomSection" style="display: none;">
+            <h2>Комната</h2>
+            <div id="roomInfo"></div>
+            <div id="playersList"></div>
+            <button id="startGameButton" disabled>Начать игру</button>
+            <button id="leaveRoomButton">Покинуть комнату</button>
+        </div>
+
+        <div class="game-section" id="gameSection" style="display: none;">
+            <div class="stats">
+                <div class="player-stat" id="player1Stat">
+                    <div class="player-name">Игрок 1</div>
+                    <div class="player-score">Слов: 0</div>
+                    <div class="player-letters">Букв: 0</div>
+                </div>
+                <div class="player-stat" id="player2Stat">
+                    <div class="player-name">Игрок 2</div>
+                    <div class="player-score">Слов: 0</div>
+                    <div class="player-letters">Букв: 0</div>
+                </div>
+            </div>
+
+            <div class="message" id="gameMessage"></div>
+
+            <div class="game-board" id="gameBoard"></div>
+
+            <div class="keyboard">
+                <div class="keyboard-row">
+                    <div class="key" data-key="й">й</div>
+                    <div class="key" data-key="ц">ц</div>
+                    <div class="key" data-key="у">у</div>
+                    <div class="key" data-key="к">к</div>
+                    <div class="key" data-key="е">е</div>
+                    <div class="key" data-key="н">н</div>
+                    <div class="key" data-key="г">г</div>
+                    <div class="key" data-key="ш">ш</div>
+                    <div class="key" data-key="щ">щ</div>
+                    <div class="key" data-key="з">з</div>
+                    <div class="key" data-key="х">х</div>
+                    <div class="key" data-key="ъ">ъ</div>
+                </div>
+                <div class="keyboard-row">
+                    <div class="key" data-key="ф">ф</div>
+                    <div class="key" data-key="ы">ы</div>
+                    <div class="key" data-key="в">в</div>
+                    <div class="key" data-key="а">а</div>
+                    <div class="key" data-key="п">п</div>
+                    <div class="key" data-key="р">р</div>
+                    <div class="key" data-key="о">о</div>
+                    <div class="key" data-key="л">л</div>
+                    <div class="key" data-key="д">д</div>
+                    <div class="key" data-key="ж">ж</div>
+                    <div class="key" data-key="э">э</div>
+                </div>
+                <div class="keyboard-row">
+                    <div class="key" data-key="я">я</div>
+                    <div class="key" data-key="ч">ч</div>
+                    <div class="key" data-key="с">с</div>
+                    <div class="key" data-key="м">м</div>
+                    <div class="key" data-key="и">и</div>
+                    <div class="key" data-key="т">т</div>
+                    <div class="key" data-key="ь">ь</div>
+                    <div class="key" data-key="б">б</div>
+                    <div class="key" data-key="ю">ю</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="hintModal">
+        <div class="modal-content">
+            <h3>Запросить подсказку?</h3>
+            <p>Вы угадали 4 буквы на своих местах. Хотите получить подсказку?</p>
+            <div class="hint-poll" id="hintPoll">
+                <p>Ожидание ответа второго игрока...</p>
+            </div>
+            <div class="hint-buttons">
+                <button id="acceptHintButton">Да</button>
+                <button id="declineHintButton">Нет</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h3 id="resultTitle">Результат раунда</h3>
+            <p id="resultMessage"></p>
+            <button id="nextRoundButton">Следующий раунд</button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_NY3eXimeD74iU6g8qZE0wsl7yexWThw",
+            authDomain: "ripsweep-1aaaf.firebaseapp.com",
+            databaseURL: "https://ripsweep-1aaaf-default-rtdb.firebaseio.com",
+            projectId: "ripsweep-1aaaf",
+            storageBucket: "ripsweep-1aaaf.firebasestorage.app",
+            messagingSenderId: "600546881732",
+            appId: "1:600546881732:web:e3e8f2c2980c583e3e5991",
+            measurementId: "G-HS9JT49X7R"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Game constants
+        const WORD_LENGTH = 5;
+        const MAX_ATTEMPTS = 6;
+        const RUWORDS = [
+            "абаза", "абазе", "абазу", "абазы", "абака", "абаке", "абаки", "абаку", "аббат",
+            // ... остальные слова из вашего списка
+            "ифрит", "княжа", "княжу", "княжь", "лесою"
+        ];
+
+        // Game state
+        let gameState = {
+            nickname: "",
+            roomId: "",
+            players: [],
+            currentPlayerIndex: 0,
+            round: 0,
+            targetWord: "",
+            attempts: [],
+            currentAttempt: "",
+            gameStarted: false,
+            hintRequested: false,
+            hintAccepted: false,
+            hintDeclined: false,
+            stats: {}
+        };
+
+        // DOM elements
+        const loginSection = document.getElementById('loginSection');
+        const roomSection = document.getElementById('roomSection');
+        const gameSection = document.getElementById('gameSection');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const loginButton = document.getElementById('loginButton');
+        const roomInfo = document.getElementById('roomInfo');
+        const playersList = document.getElementById('playersList');
+        const startGameButton = document.getElementById('startGameButton');
+        const leaveRoomButton = document.getElementById('leaveRoomButton');
+        const gameBoard = document.getElementById('gameBoard');
+        const gameMessage = document.getElementById('gameMessage');
+        const player1Stat = document.getElementById('player1Stat');
+        const player2Stat = document.getElementById('player2Stat');
+        const hintModal = document.getElementById('hintModal');
+        const hintPoll = document.getElementById('hintPoll');
+        const acceptHintButton = document.getElementById('acceptHintButton');
+        const declineHintButton = document.getElementById('declineHintButton');
+        const resultModal = document.getElementById('resultModal');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMessage = document.getElementById('resultMessage');
+        const nextRoundButton = document.getElementById('nextRoundButton');
+
+        // Keyboard keys
+        const keys = document.querySelectorAll('.key');
+
+        // Initialize game board
+        function initGameBoard() {
+            gameBoard.innerHTML = '';
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                const row = document.createElement('div');
+                row.className = 'row';
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    row.appendChild(cell);
+                }
+                gameBoard.appendChild(row);
+            }
+        }
+
+        // Update game board
+        function updateGameBoard() {
+            const rows = gameBoard.querySelectorAll('.row');
+            
+            // Clear all cells
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                    cell.className = 'cell';
+                });
+            });
+            
+            // Fill with attempts
+            gameState.attempts.forEach((attempt, attemptIndex) => {
+                const row = rows[attemptIndex];
+                const cells = row.querySelectorAll('.cell');
+                
+                for (let i = 0; i < WORD_LENGTH; i++) {
+                    const cell = cells[i];
+                    if (attempt.word[i]) {
+                        cell.textContent = attempt.word[i];
+                        cell.classList.add('filled');
+                        
+                        if (attempt.feedback) {
+                            if (attempt.feedback[i] === 'correct') {
+                                cell.classList.add('correct');
+                            } else if (attempt.feedback[i] === 'present') {
+                                cell.classList.add('present');
+                            } else {
+                                cell.classList.add('absent');
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Fill current attempt
+            if (gameState.currentAttempt) {
+                const currentRowIndex = gameState.attempts.length;
+                if (currentRowIndex < MAX_ATTEMPTS) {
+                    const row = rows[currentRowIndex];
+                    const cells = row.querySelectorAll('.cell');
+                    
+                    for (let i = 0; i < gameState.currentAttempt.length; i++) {
+                        cells[i].textContent = gameState.currentAttempt[i];
+                        cells[i].classList.add('filled');
+                    }
+                }
+            }
+        }
+
+        // Update keyboard
+        function updateKeyboard() {
+            const usedLetters = {};
+            
+            gameState.attempts.forEach(attempt => {
+                attempt.word.split('').forEach((letter, index) => {
+                    if (attempt.feedback) {
+                        if (attempt.feedback[index] === 'correct') {
+                            usedLetters[letter] = 'correct';
+                        } else if (attempt.feedback[index] === 'present' && usedLetters[letter] !== 'correct') {
+                            usedLetters[letter] = 'present';
+                        } else if (!usedLetters[letter]) {
+                            usedLetters[letter] = 'absent';
+                        }
+                    }
+                });
+            });
+            
+            keys.forEach(key => {
+                const letter = key.getAttribute('data-key');
+                if (usedLetters[letter]) {
+                    key.classList.add(usedLetters[letter]);
+                } else {
+                    key.classList.remove('correct', 'present', 'absent');
+                }
+            });
+        }
+
+        // Update player stats
+        function updateStats() {
+            if (gameState.players.length > 0) {
+                player1Stat.querySelector('.player-name').textContent = gameState.players[0].nickname;
+                player1Stat.querySelector('.player-score').textContent = `Слов: ${gameState.stats[gameState.players[0].id]?.words || 0}`;
+                player1Stat.querySelector('.player-letters').textContent = `Букв: ${gameState.stats[gameState.players[0].id]?.letters || 0}`;
+                
+                player1Stat.classList.toggle('active', gameState.gameStarted && gameState.currentPlayerIndex === 0);
+            }
+            
+            if (gameState.players.length > 1) {
+                player2Stat.querySelector('.player-name').textContent = gameState.players[1].nickname;
+                player2Stat.querySelector('.player-score').textContent = `Слов: ${gameState.stats[gameState.players[1].id]?.words || 0}`;
+                player2Stat.querySelector('.player-letters').textContent = `Букв: ${gameState.stats[gameState.players[1].id]?.letters || 0}`;
+                
+                player2Stat.classList.toggle('active', gameState.gameStarted && gameState.currentPlayerIndex === 1);
+            }
+        }
+
+        // Show message
+        function showMessage(message, isError = false) {
+            gameMessage.textContent = message;
+            gameMessage.className = 'message';
+            if (isError) {
+                gameMessage.classList.add('error');
+            } else {
+                gameMessage.classList.add('success');
+            }
+        }
+
+        // Clear message
+        function clearMessage() {
+            gameMessage.textContent = '';
+            gameMessage.className = 'message';
+        }
+
+        // Generate random word
+        function getRandomWord() {
+            const fiveLetterWords = RUWORDS.filter(word => word.length === WORD_LENGTH);
+            return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+        }
+
+        // Check if word is valid
+        function isValidWord(word) {
+            return RUWORDS.includes(word.toLowerCase());
+        }
+
+        // Evaluate attempt
+        function evaluateAttempt(attempt, target) {
+            const feedback = [];
+            const targetLetters = target.split('');
+            const attemptLetters = attempt.split('');
+            
+            // First pass for correct letters
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                if (attemptLetters[i] === targetLetters[i]) {
+                    feedback[i] = 'correct';
+                    targetLetters[i] = null; // Mark as used
+                }
+            }
+            
+            // Second pass for present letters
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                if (!feedback[i]) {
+                    const index = targetLetters.indexOf(attemptLetters[i]);
+                    if (index !== -1) {
+                        feedback[i] = 'present';
+                        targetLetters[index] = null; // Mark as used
+                    } else {
+                        feedback[i] = 'absent';
+                    }
+                }
+            }
+            
+            return feedback;
+        }
+
+        // Count correct letters
+        function countCorrectLetters(feedback) {
+            return feedback.filter(f => f === 'correct').length;
+        }
+
+        // Get possible letters for hint
+        function getPossibleLetters() {
+            const possibleLetters = {};
+            const correctLetters = Array(WORD_LENGTH).fill(null);
+            const presentLetters = new Set();
+            const absentLetters = new Set();
+            
+            // Analyze attempts to determine correct, present and absent letters
+            gameState.attempts.forEach(attempt => {
+                attempt.word.split('').forEach((letter, index) => {
+                    if (attempt.feedback[index] === 'correct') {
+                        correctLetters[index] = letter;
+                    } else if (attempt.feedback[index] === 'present') {
+                        presentLetters.add(letter);
+                    } else if (attempt.feedback[index] === 'absent') {
+                        absentLetters.add(letter);
+                    }
+                });
+            });
+            
+            // For each position, collect possible letters
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                if (correctLetters[i]) {
+                    possibleLetters[i] = [correctLetters[i]];
+                } else {
+                    const letters = new Set();
+                    
+                    // Find all words that match current knowledge
+                    const matchingWords = RUWORDS.filter(word => {
+                        if (word.length !== WORD_LENGTH) return false;
+                        
+                        // Check correct letters
+                        for (let j = 0; j < WORD_LENGTH; j++) {
+                            if (correctLetters[j] && word[j] !== correctLetters[j]) {
+                                return false;
+                            }
+                        }
+                        
+                        // Check present letters (must be in word but not in these positions)
+                        for (const letter of presentLetters) {
+                            if (!word.includes(letter)) {
+                                return false;
+                            }
+                            
+                            // If we know the letter is not in certain positions
+                            for (let j = 0; j < WORD_LENGTH; j++) {
+                                if (gameState.attempts.some(attempt => 
+                                    attempt.word[j] === letter && attempt.feedback[j] === 'absent')) {
+                                    if (word[j] === letter) return false;
+                                }
+                            }
+                        }
+                        
+                        // Check absent letters (must not be in word at all)
+                        for (const letter of absentLetters) {
+                            // Only if the letter is not also present
+                            if (!presentLetters.has(letter) && word.includes(letter)) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    });
+                    
+                    // Collect possible letters for this position
+                    matchingWords.forEach(word => {
+                        letters.add(word[i]);
+                    });
+                    
+                    possibleLetters[i] = Array.from(letters);
+                }
+            }
+            
+            return possibleLetters;
+        }
+
+        // Join room
+        function joinRoom() {
+            // Generate room ID or get from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            let roomId = urlParams.get('room');
+            
+            if (!roomId) {
+                roomId = Math.random().toString(36).substring(2, 8);
+                window.history.pushState({}, '', `?room=${roomId}`);
+            }
+            
+            gameState.roomId = roomId;
+            roomInfo.textContent = `Комната: ${roomId}`;
+            
+            // Connect to Firebase room
+            const roomRef = database.ref(`rooms/${roomId}`);
+            
+            roomRef.on('value', (snapshot) => {
+                const roomData = snapshot.val();
+                
+                if (roomData) {
+                    gameState.players = roomData.players || [];
+                    gameState.gameStarted = roomData.gameStarted || false;
+                    gameState.currentPlayerIndex = roomData.currentPlayerIndex || 0;
+                    gameState.round = roomData.round || 0;
+                    gameState.targetWord = roomData.targetWord || '';
+                    gameState.attempts = roomData.attempts || [];
+                    gameState.currentAttempt = roomData.currentAttempt || '';
+                    gameState.stats = roomData.stats || {};
+                    gameState.hintRequested = roomData.hintRequested || false;
+                    gameState.hintAccepted = roomData.hintAccepted || false;
+                    gameState.hintDeclined = roomData.hintDeclined || false;
+                    
+                    // Update UI
+                    updatePlayersList();
+                    updateStats();
+                    
+                    if (gameState.gameStarted) {
+                        loginSection.style.display = 'none';
+                        roomSection.style.display = 'none';
+                        gameSection.style.display = 'block';
+                        
+                        initGameBoard();
+                        updateGameBoard();
+                        updateKeyboard();
+                        
+                        if (gameState.hintRequested) {
+                            showHintModal();
+                        }
+                    } else {
+                        loginSection.style.display = 'none';
+                        roomSection.style.display = 'block';
+                        gameSection.style.display = 'none';
+                        
+                        // Enable start button if there are at least 2 players and I'm the first player
+                        const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+                        startGameButton.disabled = gameState.players.length < 2 || gameState.players[0].id !== myPlayer?.id;
+                    }
+                } else {
+                    // Create new room
+                    const myPlayer = {
+                        id: Math.random().toString(36).substring(2, 10),
+                        nickname: gameState.nickname
+                    };
+                    
+                    roomRef.set({
+                        players: [myPlayer],
+                        gameStarted: false,
+                        stats: {
+                            [myPlayer.id]: { words: 0, letters: 0 }
+                        }
+                    });
+                }
+            });
+            
+            // Handle disconnections
+            roomRef.onDisconnect().remove();
+        }
+
+        // Update players list
+        function updatePlayersList() {
+            playersList.innerHTML = '<h3>Игроки:</h3>';
+            
+            if (gameState.players.length === 0) {
+                playersList.innerHTML += '<p>Нет игроков в комнате</p>';
+            } else {
+                const list = document.createElement('ul');
+                gameState.players.forEach(player => {
+                    const item = document.createElement('li');
+                    item.textContent = player.nickname;
+                    list.appendChild(item);
+                });
+                playersList.appendChild(list);
+            }
+        }
+
+        // Start game
+        function startGame() {
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
+            
+            roomRef.update({
+                gameStarted: true,
+                round: 1,
+                targetWord: getRandomWord(),
+                currentPlayerIndex: 0,
+                attempts: [],
+                currentAttempt: '',
+                hintRequested: false,
+                hintAccepted: false,
+                hintDeclined: false
+            });
+        }
+
+        // Submit attempt
+        function submitAttempt() {
+            if (!isValidWord(gameState.currentAttempt)) {
+                showMessage('Такого слова нет в словаре!', true);
+                return;
+            }
+            
+            const feedback = evaluateAttempt(gameState.currentAttempt, gameState.targetWord);
+            const correctLetters = countCorrectLetters(feedback);
+            
+            const newAttempts = [...gameState.attempts, {
+                word: gameState.currentAttempt,
+                feedback: feedback,
+                playerId: gameState.players[gameState.currentPlayerIndex].id
+            }];
+            
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
+            const updates = {
+                attempts: newAttempts,
+                currentAttempt: ''
+            };
+            
+            // Check if word is guessed
+            if (correctLetters === WORD_LENGTH) {
+                // Word guessed - update stats and go to next round
+                const playerId = gameState.players[gameState.currentPlayerIndex].id;
+                const newStats = {...gameState.stats};
+                
+                if (!newStats[playerId]) {
+                    newStats[playerId] = { words: 0, letters: 0 };
+                }
+                
+                newStats[playerId].words += 1;
+                newStats[playerId].letters += correctLetters;
+                
+                updates.stats = newStats;
+                updates.round = gameState.round + 1;
+                updates.gameStarted = false;
+                
+                roomRef.update(updates).then(() => {
+                    showResult(true, gameState.currentAttempt);
+                });
+            } else if (newAttempts.length === MAX_ATTEMPTS) {
+                // All attempts used - go to next round
+                updates.round = gameState.round + 1;
+                updates.gameStarted = false;
+                
+                roomRef.update(updates).then(() => {
+                    showResult(false, gameState.targetWord);
+                });
+            } else {
+                // Check for hint condition (4 correct letters in last attempt)
+                if (correctLetters === 4 && newAttempts.length >= 3) {
+                    updates.hintRequested = true;
+                }
+                
+                // Switch to next player
+                updates.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+                
+                roomRef.update(updates);
+            }
+        }
+
+        // Show hint modal
+        function showHintModal() {
+            hintModal.style.display = 'flex';
+            
+            // Check if both players responded
+            if (gameState.hintAccepted && gameState.hintDeclined) {
+                hintPoll.innerHTML = '<p>Игроки не согласились по поводу подсказки</p>';
+                acceptHintButton.disabled = true;
+                declineHintButton.disabled = true;
+                
+                // Hide modal after delay
+                setTimeout(() => {
+                    hintModal.style.display = 'none';
+                    
+                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                    roomRef.update({
+                        hintRequested: false,
+                        hintAccepted: false,
+                        hintDeclined: false
+                    });
+                }, 2000);
+            } else if (gameState.hintAccepted) {
+                // Both players accepted - show hint
+                const possibleLetters = getPossibleLetters();
+                let hintHtml = '<div class="hint-info"><p>Возможные буквы:</p><ul>';
+                
+                for (let i = 0; i < WORD_LENGTH; i++) {
+                    if (possibleLetters[i].length > 1) {
+                        hintHtml += `<li>Позиция ${i + 1}: ${possibleLetters[i].join(', ')}</li>`;
+                    }
+                }
+                
+                hintHtml += '</ul></div>';
+                hintPoll.innerHTML = hintHtml;
+                
+                acceptHintButton.disabled = true;
+                declineHintButton.disabled = true;
+                
+                // Hide modal after delay
+                setTimeout(() => {
+                    hintModal.style.display = 'none';
+                    
+                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                    roomRef.update({
+                        hintRequested: false,
+                        hintAccepted: false,
+                        hintDeclined: false
+                    });
+                }, 5000);
+            } else {
+                // Waiting for responses
+                hintPoll.innerHTML = '<p>Ожидание ответа второго игрока...</p>';
+                acceptHintButton.disabled = false;
+                declineHintButton.disabled = false;
+            }
+        }
+
+        // Show result modal
+        function showResult(success, word) {
+            resultTitle.textContent = success ? 'Поздравляем!' : 'Попытки закончились';
+            resultMessage.textContent = success 
+                ? `Игрок ${gameState.players[gameState.currentPlayerIndex].nickname} угадал слово "${word}"!` 
+                : `Никто не угадал слово "${word}".`;
+            
+            resultModal.style.display = 'flex';
+        }
+
+        // Start next round
+        function startNextRound() {
+            resultModal.style.display = 'none';
+            
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
+            
+            // Rotate players for next round
+            const rotatedPlayers = [...gameState.players];
+            rotatedPlayers.push(rotatedPlayers.shift());
+            
+            roomRef.update({
+                players: rotatedPlayers,
+                gameStarted: true,
+                targetWord: getRandomWord(),
+                currentPlayerIndex: 0,
+                attempts: [],
+                currentAttempt: '',
+                hintRequested: false,
+                hintAccepted: false,
+                hintDeclined: false
+            });
+        }
+
+        // Event listeners
+        loginButton.addEventListener('click', () => {
+            const nickname = nicknameInput.value.trim();
+            if (nickname.length < 2 || nickname.length > 10) {
+                alert('Никнейм должен быть от 2 до 10 символов');
+                return;
+            }
+            
+            gameState.nickname = nickname;
+            joinRoom();
+        });
+
+        startGameButton.addEventListener('click', startGame);
+
+        leaveRoomButton.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        acceptHintButton.addEventListener('click', () => {
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
+            const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+            
+            if (myPlayer) {
+                if (gameState.players[0].id === myPlayer.id) {
+                    roomRef.update({ hintAccepted: true });
+                } else {
+                    roomRef.update({ hintDeclined: true });
+                }
+            }
+        });
+
+        declineHintButton.addEventListener('click', () => {
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
+            const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+            
+            if (myPlayer) {
+                if (gameState.players[0].id === myPlayer.id) {
+                    roomRef.update({ hintDeclined: true });
+                } else {
+                    roomRef.update({ hintAccepted: true });
+                }
+            }
+        });
+
+        nextRoundButton.addEventListener('click', startNextRound);
+
+        // Keyboard input
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.gameStarted) return;
+            
+            const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+            if (!myPlayer || gameState.players[gameState.currentPlayerIndex].id !== myPlayer.id) return;
+            
+            if (e.key === 'Enter') {
+                if (gameState.currentAttempt.length === WORD_LENGTH) {
+                    submitAttempt();
+                }
+            } else if (e.key === 'Backspace') {
+                gameState.currentAttempt = gameState.currentAttempt.slice(0, -1);
+                
+                const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                roomRef.update({ currentAttempt: gameState.currentAttempt });
+            } else if (/^[а-яА-ЯёЁ]$/.test(e.key) && gameState.currentAttempt.length < WORD_LENGTH) {
+                gameState.currentAttempt += e.key.toLowerCase();
+                
+                const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                roomRef.update({ currentAttempt: gameState.currentAttempt });
+            }
+        });
+
+        // Virtual keyboard
+        keys.forEach(key => {
+            key.addEventListener('click', () => {
+                if (!gameState.gameStarted) return;
+                
+                const myPlayer = gameState.players.find(p => p.nickname === gameState.nickname);
+                if (!myPlayer || gameState.players[gameState.currentPlayerIndex].id !== myPlayer.id) return;
+                
+                const letter = key.getAttribute('data-key');
+                
+                if (letter === 'enter') {
+                    if (gameState.currentAttempt.length === WORD_LENGTH) {
+                        submitAttempt();
+                    }
+                } else if (letter === 'backspace') {
+                    gameState.currentAttempt = gameState.currentAttempt.slice(0, -1);
+                    
+                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                    roomRef.update({ currentAttempt: gameState.currentAttempt });
+                } else if (gameState.currentAttempt.length < WORD_LENGTH) {
+                    gameState.currentAttempt += letter;
+                    
+                    const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                    roomRef.update({ currentAttempt: gameState.currentAttempt });
+                }
+            });
+        });
+
+        // Initialize
+        initGameBoard();
+    </script>
+</body>
+</html>
