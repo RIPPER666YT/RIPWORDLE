@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIPWORDLE</title>
+    <title>RIPWORDLE | Мультиплеер</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
@@ -373,6 +373,7 @@
             <div class="message">
                 Раунд: <span id="roundCounter">1</span>
                 | Ход: <span id="currentPlayer"></span>
+                | Попыток: <span id="attemptsCounter">0/6</span>
             </div>
         </div>
     </div>
@@ -469,6 +470,7 @@
         const player2 = document.getElementById('player2');
         const roundCounter = document.getElementById('roundCounter');
         const currentPlayer = document.getElementById('currentPlayer');
+        const attemptsCounter = document.getElementById('attemptsCounter');
         const hintModal = document.getElementById('hintModal');
         const hintPoll = document.getElementById('hintPoll');
         const acceptHintBtn = document.getElementById('acceptHintBtn');
@@ -531,6 +533,9 @@
                     }
                 }
             }
+            
+            // Обновляем счетчик попыток
+            attemptsCounter.textContent = `${gameState.attempts.length}/${MAX_ATTEMPTS}`;
         }
         
         // Обновление информации о игроках
@@ -600,6 +605,8 @@
         
         // Проверка слова
         function isValidWord(word) {
+            if (word.length !== WORD_LENGTH) return false;
+            
             if (gameState.dictionary.length > 0) {
                 return gameState.dictionary.includes(word.toLowerCase());
             } else {
@@ -804,7 +811,7 @@
         function submitAttempt() {
             if (!isValidWord(gameState.currentAttempt)) {
                 showMessage('Нет такого слова!', true);
-                return;
+                return false;
             }
             
             const feedback = evaluateAttempt(gameState.currentAttempt, gameState.targetWord);
@@ -839,6 +846,7 @@
                 roomRef.update(updates).then(() => {
                     showResult(true, gameState.currentAttempt);
                 });
+                return true;
             } 
             // Проверка конца раунда
             else if (newAttempts.length === MAX_ATTEMPTS) {
@@ -846,18 +854,17 @@
                 roomRef.update(updates).then(() => {
                     showResult(false, gameState.targetWord);
                 });
+                return true;
             } 
             // Проверка подсказки (4 правильные буквы)
             else if (correctLetters === 4 && newAttempts.length >= 3) {
                 updates.hintRequested = true;
-                updates.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-                roomRef.update(updates);
-            } 
-            // Обычный ход
-            else {
-                updates.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
-                roomRef.update(updates);
             }
+            
+            // Передаем ход следующему игроку
+            updates.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            roomRef.update(updates);
+            return true;
         }
         
         // Показать модалку подсказки
@@ -996,7 +1003,14 @@
             
             if (e.key === 'Enter') {
                 if (gameState.currentAttempt.length === WORD_LENGTH) {
-                    submitAttempt();
+                    if (submitAttempt()) {
+                        // Если попытка засчитана, очищаем текущее слово
+                        gameState.currentAttempt = '';
+                        const roomRef = database.ref(`rooms/${gameState.roomId}`);
+                        roomRef.update({ currentAttempt: '' });
+                    }
+                } else {
+                    showMessage('Введите слово из 5 букв!', true);
                 }
             } else if (e.key === 'Backspace') {
                 gameState.currentAttempt = gameState.currentAttempt.slice(0, -1);
