@@ -419,6 +419,8 @@
         // Константы игры
         const WORD_LENGTH = 5;
         const MAX_ATTEMPTS = 6;
+        
+        // Словарь слов
         const RUWORDS = [
             "абаза", "абака", "аббат", "абвер", "абзац", "аборт", "абрек", "абрис", "абхаз", 
             "аванс", "авгит", "авгур", "авеню", "авизо", "авлос", "авось", "аврал", 
@@ -440,7 +442,8 @@
             gameStarted: false,
             hintRequested: false,
             hintResponses: {},
-            stats: {}
+            stats: {},
+            dictionary: []
         };
         
         // DOM элементы
@@ -584,13 +587,24 @@
         
         // Генерация случайного слова
         function getRandomWord() {
-            const fiveLetterWords = RUWORDS.filter(word => word.length === WORD_LENGTH);
-            return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+            if (gameState.dictionary.length === 0) {
+                // Если словарь не загружен, используем встроенный
+                const fiveLetterWords = RUWORDS.filter(word => word.length === WORD_LENGTH);
+                return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+            } else {
+                // Используем загруженный словарь
+                const fiveLetterWords = gameState.dictionary.filter(word => word.length === WORD_LENGTH);
+                return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+            }
         }
         
         // Проверка слова
         function isValidWord(word) {
-            return RUWORDS.includes(word.toLowerCase());
+            if (gameState.dictionary.length > 0) {
+                return gameState.dictionary.includes(word.toLowerCase());
+            } else {
+                return RUWORDS.includes(word.toLowerCase());
+            }
         }
         
         // Оценка попытки
@@ -887,6 +901,20 @@
             });
         }
         
+        // Загрузка словаря из файла
+        function loadDictionary() {
+            fetch('RUWORDS.json')
+                .then(response => response.json())
+                .then(data => {
+                    gameState.dictionary = data;
+                    console.log('Словарь загружен, слов:', data.length);
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки словаря, используется встроенный:', error);
+                    gameState.dictionary = RUWORDS;
+                });
+        }
+        
         // Обработчики событий
         createTab.addEventListener('click', () => {
             createTab.classList.add('active');
@@ -985,6 +1013,7 @@
         
         // Инициализация
         initGameBoard();
+        loadDictionary();
     </script>
 </body>
 </html>
