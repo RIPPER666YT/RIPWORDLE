@@ -40,23 +40,10 @@
         
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 600px;
             padding: 20px;
             position: relative;
             z-index: 1;
-            display: flex;
-            flex-wrap: wrap;
-        }
-        
-        .main-content {
-            flex: 1;
-            min-width: 300px;
-        }
-        
-        .sidebar {
-            width: 250px;
-            margin-left: 20px;
-            display: none;
         }
         
         h1 {
@@ -66,7 +53,6 @@
             color: var(--neon-red);
             text-shadow: 0 0 10px var(--neon-red), 0 0 20px var(--neon-red);
             letter-spacing: 3px;
-            width: 100%;
         }
         
         .panel {
@@ -307,94 +293,6 @@
             color: var(--neon-red);
         }
         
-        .settings-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            color: var(--neon-blue);
-            margin-right: 10px;
-        }
-        
-        .checkbox-label input {
-            width: auto;
-            margin-right: 8px;
-            margin-bottom: 0;
-        }
-        
-        .info-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            background-color: var(--neon-blue);
-            color: var(--dark-bg);
-            border-radius: 50%;
-            text-align: center;
-            line-height: 16px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: help;
-            margin-left: 5px;
-        }
-        
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: var(--darker-bg);
-            color: white;
-            text-align: center;
-            border-radius: 6px;
-            padding: 10px;
-            border: 1px solid var(--neon-purple);
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.9rem;
-            text-shadow: none;
-        }
-        
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        .dictionary-search {
-            margin-bottom: 15px;
-        }
-        
-        .dictionary-list {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid var(--neon-purple);
-            border-radius: 5px;
-            padding: 10px;
-            background-color: rgba(5, 5, 5, 0.7);
-        }
-        
-        .dictionary-word {
-            padding: 5px;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-        
-        .dictionary-word:hover {
-            background-color: rgba(188, 19, 254, 0.2);
-        }
-        
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -407,17 +305,7 @@
             100% { text-shadow: 0 0 5px var(--neon-red), 0 0 10px var(--neon-red); }
         }
         
-        @media (max-width: 800px) {
-            .container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                margin-left: 0;
-                margin-top: 20px;
-            }
-            
+        @media (max-width: 600px) {
             :root {
                 --cell-size: 50px;
             }
@@ -436,78 +324,56 @@
     <div class="container">
         <h1>RIPWORDLE</h1>
         
-        <div class="main-content">
-            <!-- Логин -->
-            <div class="panel" id="loginPanel">
-                <div class="tab-container">
-                    <div class="tab active" id="createTab">Создать</div>
-                    <div class="tab" id="joinTab">Присоединиться</div>
-                </div>
-                
-                <div id="createForm">
-                    <h2 class="panel-title">НОВАЯ ИГРА</h2>
-                    <input type="text" id="nicknameInput" placeholder="Твой никнейм" maxlength="10">
-                    <div class="settings-row">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="dictionaryCheckbox"> Справочник
-                            <div class="tooltip">
-                                <span class="info-icon">i</span>
-                                <span class="tooltiptext">Включает справочник слов с возможностью поиска. Полезно для обучения и поиска возможных слов.</span>
-                            </div>
-                        </label>
-                    </div>
-                    <button class="btn" id="createGameBtn">СОЗДАТЬ КОМНАТУ</button>
-                </div>
-                
-                <div id="joinForm" style="display: none;">
-                    <h2 class="panel-title">ПРИСОЕДИНИТЬСЯ</h2>
-                    <input type="text" id="joinNicknameInput" placeholder="Твой никнейм" maxlength="10">
-                    <input type="text" id="roomCodeInput" placeholder="Код комнаты" maxlength="4">
-                    <button class="btn" id="joinGameBtn">ВОЙТИ</button>
-                </div>
+        <!-- Логин -->
+        <div class="panel" id="loginPanel">
+            <div class="tab-container">
+                <div class="tab active" id="createTab">Создать</div>
+                <div class="tab" id="joinTab">Присоединиться</div>
             </div>
             
-            <!-- Лобби -->
-            <div class="panel" id="lobbyPanel" style="display: none;">
-                <h2 class="panel-title">КОМНАТА: <span id="roomCode"></span></h2>
-                <div id="playersList"></div>
-                <button class="btn" id="startGameBtn" disabled>СТАРТ</button>
-                <button class="btn btn-secondary" id="leaveRoomBtn">ВЫЙТИ</button>
+            <div id="createForm">
+                <h2 class="panel-title">НОВАЯ ИГРА</h2>
+                <input type="text" id="nicknameInput" placeholder="Твой никнейм" maxlength="10">
+                <button class="btn" id="createGameBtn">СОЗДАТЬ КОМНАТУ</button>
             </div>
             
-            <!-- Игра -->
-            <div id="gamePanel" style="display: none;">
-                <div class="players">
-                    <div class="player" id="player1">
-                        <div class="player-name">Игрок 1</div>
-                        <div class="player-stats">Слов: 0 | Букв: 0</div>
-                    </div>
-                    <div class="player" id="player2">
-                        <div class="player-name">Игрок 2</div>
-                        <div class="player-stats">Слов: 0 | Букв: 0</div>
-                    </div>
-                </div>
-                
-                <div class="message" id="gameMessage"></div>
-                
-                <div class="game-board" id="gameBoard"></div>
-                
-                <div class="message">
-                    Раунд: <span id="roundCounter">1</span>
-                    | Ход: <span id="currentPlayer"></span>
-                    | Попыток: <span id="attemptsCounter">0/6</span>
-                </div>
+            <div id="joinForm" style="display: none;">
+                <h2 class="panel-title">ПРИСОЕДИНИТЬСЯ</h2>
+                <input type="text" id="joinNicknameInput" placeholder="Твой никнейм" maxlength="10">
+                <input type="text" id="roomCodeInput" placeholder="Код комнаты" maxlength="4">
+                <button class="btn" id="joinGameBtn">ВОЙТИ</button>
             </div>
         </div>
         
-        <!-- Справочник -->
-        <div class="sidebar" id="dictionarySidebar">
-            <div class="panel">
-                <h2 class="panel-title">СПРАВОЧНИК</h2>
-                <div class="dictionary-search">
-                    <input type="text" id="dictionarySearch" placeholder="Поиск слова...">
+        <!-- Лобби -->
+        <div class="panel" id="lobbyPanel" style="display: none;">
+            <h2 class="panel-title">КОМНАТА: <span id="roomCode"></span></h2>
+            <div id="playersList"></div>
+            <button class="btn" id="startGameBtn" disabled>СТАРТ</button>
+            <button class="btn btn-secondary" id="leaveRoomBtn">ВЫЙТИ</button>
+        </div>
+        
+        <!-- Игра -->
+        <div id="gamePanel" style="display: none;">
+            <div class="players">
+                <div class="player" id="player1">
+                    <div class="player-name">Игрок 1</div>
+                    <div class="player-stats">Слов: 0 | Букв: 0</div>
                 </div>
-                <div class="dictionary-list" id="dictionaryList"></div>
+                <div class="player" id="player2">
+                    <div class="player-name">Игрок 2</div>
+                    <div class="player-stats">Слов: 0 | Букв: 0</div>
+                </div>
+            </div>
+            
+            <div class="message" id="gameMessage"></div>
+            
+            <div class="game-board" id="gameBoard"></div>
+            
+            <div class="message">
+                Раунд: <span id="roundCounter">1</span>
+                | Ход: <span id="currentPlayer"></span>
+                | Попыток: <span id="attemptsCounter">0/6</span>
             </div>
         </div>
     </div>
@@ -578,8 +444,7 @@
             hintRequested: false,
             hintResponses: {},
             stats: {},
-            dictionary: [],
-            useDictionary: false
+            dictionary: []
         };
         
         // DOM элементы
@@ -614,10 +479,6 @@
         const resultTitle = document.getElementById('resultTitle');
         const resultMessage = document.getElementById('resultMessage');
         const nextRoundBtn = document.getElementById('nextRoundBtn');
-        const dictionarySidebar = document.getElementById('dictionarySidebar');
-        const dictionaryCheckbox = document.getElementById('dictionaryCheckbox');
-        const dictionarySearch = document.getElementById('dictionarySearch');
-        const dictionaryList = document.getElementById('dictionaryList');
         
         // Инициализация игрового поля
         function initGameBoard() {
@@ -792,7 +653,6 @@
         function createRoom() {
             gameState.roomId = generateRoomCode();
             roomCode.textContent = gameState.roomId;
-            gameState.useDictionary = dictionaryCheckbox.checked;
             
             // Создаем игрока
             gameState.playerId = generateId();
@@ -809,6 +669,11 @@
                 
                 if (roomData) {
                     updateGameState(roomData);
+                    
+                    // Проверяем завершение голосования за подсказку
+                    if (roomData.hintRequested && Object.keys(roomData.hintResponses || {}).length === roomData.players.length) {
+                        handleHintResponse(roomData);
+                    }
                 } else {
                     // Создаем новую комнату
                     roomRef.set({
@@ -816,9 +681,6 @@
                         gameStarted: false,
                         stats: {
                             [player.id]: { words: 0, letters: 0 }
-                        },
-                        settings: {
-                            useDictionary: gameState.useDictionary
                         }
                     });
                 }
@@ -830,6 +692,41 @@
             });
             
             showLobby();
+        }
+        
+        // Обработка ответов на подсказку
+        function handleHintResponse(roomData) {
+            const allAgreed = Object.values(roomData.hintResponses).every(res => res === true);
+            
+            if (allAgreed) {
+                // Даем подсказку
+                const lastAttempt = roomData.attempts[roomData.attempts.length - 1];
+                let hintIndex = -1;
+                
+                // Находим первую неправильную букву
+                for (let i = 0; i < WORD_LENGTH; i++) {
+                    if (lastAttempt.feedback[i] !== 'correct') {
+                        hintIndex = i;
+                        break;
+                    }
+                }
+                
+                if (hintIndex !== -1) {
+                    const hintLetter = roomData.targetWord[hintIndex];
+                    showMessage(`Подсказка: на позиции ${hintIndex + 1} должна быть буква "${hintLetter.toUpperCase()}"`);
+                }
+            }
+            
+            // Продолжаем игру
+            const roomRef = database.ref(`rooms/${gameState.roomId}`);
+            roomRef.update({
+                hintRequested: false,
+                hintResponses: {},
+                currentPlayerIndex: (roomData.currentPlayerIndex + 1) % roomData.players.length
+            });
+            
+            // Скрываем модалку
+            hintModal.style.display = 'none';
         }
         
         // Присоединение к комнате
@@ -863,8 +760,12 @@
                         roomRef.update({ players: updatedPlayers });
                     }
                     
-                    gameState.useDictionary = roomData.settings?.useDictionary || false;
                     updateGameState(roomData);
+                    
+                    // Проверяем завершение голосования за подсказку
+                    if (roomData.hintRequested && Object.keys(roomData.hintResponses || {}).length === roomData.players.length) {
+                        handleHintResponse(roomData);
+                    }
                 } else {
                     alert('Комната не найдена!');
                     window.location.reload();
@@ -889,7 +790,6 @@
             gameState.stats = roomData.stats || {};
             gameState.hintRequested = roomData.hintRequested || false;
             gameState.hintResponses = roomData.hintResponses || {};
-            gameState.useDictionary = roomData.settings?.useDictionary || false;
             
             // Обновляем UI
             updatePlayersInfo();
@@ -898,44 +798,9 @@
                 showGame();
                 updateGameBoard();
                 
-                // Показываем/скрываем справочник
-                if (gameState.useDictionary) {
-                    dictionarySidebar.style.display = 'block';
-                    updateDictionaryList();
-                } else {
-                    dictionarySidebar.style.display = 'none';
-                }
-                
                 // Проверяем подсказку
-                if (gameState.hintRequested) {
-                    const allResponded = gameState.players.every(p => gameState.hintResponses[p.id] !== undefined);
-                    
-                    if (!allResponded && !gameState.hintResponses[gameState.playerId]) {
-                        showHintModal();
-                    } else if (allResponded) {
-                        // Все ответили - проверяем решение
-                        const allAccepted = gameState.players.every(p => gameState.hintResponses[p.id]);
-                        
-                        if (allAccepted) {
-                            // Даем подсказку
-                            const feedback = evaluateAttempt(gameState.currentAttempt, gameState.targetWord);
-                            const correctIndices = feedback.map((f, i) => f === 'correct' ? i : -1).filter(i => i !== -1);
-                            
-                            if (correctIndices.length > 0) {
-                                const randomIndex = correctIndices[Math.floor(Math.random() * correctIndices.length)];
-                                const correctLetter = gameState.targetWord[randomIndex];
-                                
-                                showMessage(`Подсказка: буква "${correctLetter.toUpperCase()}" на позиции ${randomIndex + 1} правильная!`, false);
-                            }
-                        }
-                        
-                        // Сбрасываем запрос подсказки
-                        const roomRef = database.ref(`rooms/${gameState.roomId}`);
-                        roomRef.update({
-                            hintRequested: false,
-                            hintResponses: {}
-                        });
-                    }
+                if (gameState.hintRequested && !gameState.hintResponses[gameState.playerId]) {
+                    showHintModal();
                 }
             } else {
                 showLobby();
@@ -962,7 +827,6 @@
             loginPanel.style.display = 'none';
             lobbyPanel.style.display = 'block';
             gamePanel.style.display = 'none';
-            dictionarySidebar.style.display = 'none';
         }
         
         // Показать игру
@@ -970,12 +834,6 @@
             loginPanel.style.display = 'none';
             lobbyPanel.style.display = 'none';
             gamePanel.style.display = 'block';
-            
-            if (gameState.useDictionary) {
-                dictionarySidebar.style.display = 'block';
-            } else {
-                dictionarySidebar.style.display = 'none';
-            }
         }
         
         // Начало игры
@@ -1096,25 +954,6 @@
             });
         }
         
-        // Обновление списка слов в справочнике
-        function updateDictionaryList(filter = '') {
-            dictionaryList.innerHTML = '';
-            
-            const wordsToShow = gameState.dictionary
-                .filter(word => word.length === WORD_LENGTH)
-                .filter(word => word.includes(filter.toLowerCase()));
-            
-            wordsToShow.forEach(word => {
-                const wordElement = document.createElement('div');
-                wordElement.className = 'dictionary-word';
-                wordElement.textContent = word.toUpperCase();
-                wordElement.addEventListener('click', () => {
-                    // Можно добавить функционал для копирования слова или подсказки
-                });
-                dictionaryList.appendChild(wordElement);
-            });
-        }
-        
         // Загрузка словаря из файла
         function loadDictionary() {
             fetch('RUWORDS.json')
@@ -1122,12 +961,10 @@
                 .then(data => {
                     gameState.dictionary = data;
                     console.log('Словарь загружен, слов:', data.length);
-                    updateDictionaryList();
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки словаря, используется встроенный:', error);
                     gameState.dictionary = RUWORDS;
-                    updateDictionaryList();
                 });
         }
         
@@ -1185,7 +1022,6 @@
             hintPoll.innerHTML = 'Вы согласились. Ожидаем ответа соперника...';
             acceptHintBtn.disabled = true;
             declineHintBtn.disabled = true;
-            hintModal.style.display = 'none';
         });
         
         declineHintBtn.addEventListener('click', () => {
@@ -1199,15 +1035,9 @@
             hintPoll.innerHTML = 'Вы отказались. Ожидаем ответа соперника...';
             acceptHintBtn.disabled = true;
             declineHintBtn.disabled = true;
-            hintModal.style.display = 'none';
         });
         
         nextRoundBtn.addEventListener('click', nextRound);
-        
-        // Поиск в справочнике
-        dictionarySearch.addEventListener('input', (e) => {
-            updateDictionaryList(e.target.value);
-        });
         
         // Обработка клавиатуры
         document.addEventListener('keydown', (e) => {
